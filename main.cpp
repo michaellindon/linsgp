@@ -6,11 +6,11 @@
 #include <trng/uniform01_dist.hpp>
 #include <omp.h>
 #include <trng/normal_dist.hpp>
+#include <trng/lognormal_dist.hpp>
 
 class particles{
 	public:
-		std::vector<double> phi;
-		double phit,Z;
+		std::vector<double> phi,phit;
 };
 
 using namespace std;
@@ -19,6 +19,10 @@ int main(int argc, char *argv[])
 {
 	int i,d;
 	int p=10; //p ~ number of dimensions
+	int mphi=0;
+	int mphit=0;
+	int vphi=1.0;
+	int vphit=1.0;
 	int np; //np ~ number of particles
 	int niter; //niter ~ number of iterations
 	int nthreads; //nthreads ~ number of threads
@@ -63,16 +67,22 @@ int main(int argc, char *argv[])
 
 
 
+	//Initialize particles with draws from the posterior
+trng::lognormal_dist<> lognormal_phi(mphi,vphi);
+trng::lognormal_dist<> lognormal_phit(mphit,vphit);
 #pragma omp parallel for
 	for (i = 0; i < np; ++i)
 	{
 		rank=omp_get_thread_num();
-		particle[i].phi.resize(p);
+		particle[i].phi.resize(p+1);
+		particle[i].phit.resize(p);
 	
 		for (d = 0; d < p; ++d)
 		{
-		particle[i].phi[d] = normal(stream[rank]);
+		particle[i].phi[d] = lognormal_phi(stream[rank]);
+		particle[i].phit[d] = lognormal_phi(stream[rank]);
 		}
+		particle[i].phi[p] = lognormal_phi(stream[rank]);
 
 	}
 
