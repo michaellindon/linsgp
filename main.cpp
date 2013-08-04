@@ -7,7 +7,7 @@
 #include <omp.h>
 #include <trng/normal_dist.hpp>
 
-class particle{
+class particles{
 	public:
 		double phi,phit,Z;
 };
@@ -22,13 +22,13 @@ int main(int argc, char *argv[])
 	int nthreads; //nthreads ~ number of threads
 	int rank; //thread identifier
 
-	particle * particles;
+	particles * particle; 
 	trng::normal_dist<> normal(0.0,1.0);
 	np=atoi(argv[1]); //Get np from user
-	particles = new (nothrow)  particle[np]; //Create Particles
+	particle = new (nothrow)  particles[np]; //Create Particles
 
 	//Check if memory allocation was successful
-	if (particles==0){
+	if (particle==0){
 		std::cout << "Dynamic memory allocation for " 
 			<< np
 			<< " particles was not successful." 
@@ -44,7 +44,17 @@ int main(int argc, char *argv[])
 	//Set number of threads to the supported maximum
 	omp_set_num_threads(nthreads);
 	//Create "nthreads" number of independent random number streams 
-	trng::yarn2 stream[nthreads];
+	//trng::yarn2 stream[nthreads];
+	trng::yarn2 * stream;
+	stream=new (nothrow) trng::yarn2[nthreads];
+	if(stream==0){
+		std::cout << "Dynamic memory allocation for "
+			<< nthreads
+			<< " random number streams failed."
+			<<std::endl ;
+	}
+
+
 	for (i = 0; i < nthreads; i++)
 	{
 		stream[i].split(nthreads,i);
@@ -56,14 +66,14 @@ int main(int argc, char *argv[])
 	for (i = 0; i < np; ++i)
 	{
 		rank=omp_get_thread_num();
-		particles[i].phi = normal(stream[rank]);
+		particle[i].phi = normal(stream[rank]);
 	}
 
 
-	cout << particles[3].phi << endl;
-	cout << particles[4].phi << endl;
-	cout << particles[5].phi << endl;
-	delete[] particles; //Free memory
+	cout << particle[3].phi << endl;
+	cout << particle[4].phi << endl;
+	cout << particle[5].phi << endl;
+	delete[] particle; //Free memory
 
 	return 0;
 }
