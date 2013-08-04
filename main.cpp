@@ -9,14 +9,16 @@
 
 class particles{
 	public:
-		double phi,phit,Z;
+		std::vector<double> phi;
+		double phit,Z;
 };
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-	int i;
+	int i,d;
+	int p=10; //p ~ number of dimensions
 	int np; //np ~ number of particles
 	int niter; //niter ~ number of iterations
 	int nthreads; //nthreads ~ number of threads
@@ -44,7 +46,6 @@ int main(int argc, char *argv[])
 	//Set number of threads to the supported maximum
 	omp_set_num_threads(nthreads);
 	//Create "nthreads" number of independent random number streams 
-	//trng::yarn2 stream[nthreads];
 	trng::yarn2 * stream;
 	stream=new (nothrow) trng::yarn2[nthreads];
 	if(stream==0){
@@ -66,13 +67,19 @@ int main(int argc, char *argv[])
 	for (i = 0; i < np; ++i)
 	{
 		rank=omp_get_thread_num();
-		particle[i].phi = normal(stream[rank]);
+		particle[i].phi.resize(p);
+	
+		for (d = 0; d < p; ++d)
+		{
+		particle[i].phi[d] = normal(stream[rank]);
+		}
+
 	}
 
 
-	cout << particle[3].phi << endl;
-	cout << particle[4].phi << endl;
-	cout << particle[5].phi << endl;
+	cout << particle[1].phi[1] << endl;
+	cout << particle[1].phi[2] << endl;
+	cout << particle[2].phi[1] << endl;
 	delete[] particle; //Free memory
 
 	return 0;
