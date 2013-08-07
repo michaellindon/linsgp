@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	int vphi=1.0;
 	int vphit=1.0;
 	int np; //np ~ number of particles
-	int niter; //niter ~ number of iterations
+	//int niter; //niter ~ number of iterations
 	int nthreads; //nthreads ~ number of threads
 	int rank; //thread identifier
 
@@ -91,6 +91,7 @@ trng::lognormal_dist<> lognormal_phit(mphit,vphit);
 	cout << particle[1].phi[2] << endl;
 	cout << particle[2].phi[1] << endl;
 	delete[] particle; //Free memory
+	delete[] stream;
 
 	return 0;
 }
