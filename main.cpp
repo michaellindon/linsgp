@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	//Initialize particles with draws from the posterior
 trng::lognormal_dist<> lognormal_phi(mphi,vphi);
 trng::lognormal_dist<> lognormal_phit(mphit,vphit);
-#pragma omp parallel for
+#pragma omp parallel for private(rank,i,d)
 	for (i = 0; i < np; ++i)
 	{
 		rank=omp_get_thread_num();
