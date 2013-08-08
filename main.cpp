@@ -20,28 +20,21 @@ class particles{
 
 using namespace std;
 
-extern "C" void linsgp()
+extern "C" void linsgp(int *np, int *niter, double *mphi, double *mphit, double *vphi, double *vphit)
 {
 	int i,d;
 	int p=10; //p ~ number of dimensions
-	int mphi=0;
-	int mphit=0;
-	int vphi=1.0;
-	int vphit=1.0;
-	int np; //np ~ number of particles
-	//int niter; //niter ~ number of iterations
 	int nthreads=1; //nthreads ~ number of threads. 1 by default.
 	int rank=0; //thread identifier. 0 by default.
 
 	particles * particle; 
 	trng::normal_dist<> normal(0.0,1.0);
-	np=10; //Get np from user
-	particle = new (nothrow)  particles[np]; //Create Particles
+	particle = new (nothrow)  particles[*np]; //Create Particles
 
 	//Check if memory allocation was successful
 	if (particle==0){
 		std::cout << "Dynamic memory allocation for " 
-			<< np
+			<< *np
 			<< " particles was not successful." 
 			<< std::endl;
 		std::cout << "Please consider using fewer particles." 
@@ -76,10 +69,10 @@ extern "C" void linsgp()
 
 
 	//Initialize particles with draws from the posterior
-trng::lognormal_dist<> lognormal_phi(mphi,vphi);
-trng::lognormal_dist<> lognormal_phit(mphit,vphit);
+trng::lognormal_dist<> lognormal_phi(*mphi,*vphi);
+trng::lognormal_dist<> lognormal_phit(*mphit,*vphit);
 #pragma omp parallel for private(rank,i,d)
-	for (i = 0; i < np; ++i)
+	for (i = 0; i < *np; ++i)
 	{
 		rank=omp_get_thread_num();
 		particle[i].phi.resize(p+1);
