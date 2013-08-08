@@ -20,7 +20,7 @@ class particles{
 
 using namespace std;
 
-int main(int argc, char *argv[])
+extern "C" void linsgp()
 {
 	int i,d;
 	int p=10; //p ~ number of dimensions
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 
 	particles * particle; 
 	trng::normal_dist<> normal(0.0,1.0);
-	np=atoi(argv[1]); //Get np from user
+	np=10; //Get np from user
 	particle = new (nothrow)  particles[np]; //Create Particles
 
 	//Check if memory allocation was successful
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 			<< std::endl;
 		std::cout << "Please consider using fewer particles." 
 			<< std::endl;
-		return EXIT_FAILURE;
+	//	return EXIT_FAILURE;
 	}
 
 
@@ -101,5 +101,5 @@ trng::lognormal_dist<> lognormal_phit(mphit,vphit);
 	delete[] particle; //Free memory
 	delete[] stream;
 
-	return 0;
+//	return 0;
 }
