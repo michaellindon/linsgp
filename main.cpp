@@ -4,9 +4,14 @@
 #include <new>
 #include <trng/yarn2.hpp>
 #include <trng/uniform01_dist.hpp>
-#include <omp.h>
 #include <trng/normal_dist.hpp>
 #include <trng/lognormal_dist.hpp>
+#ifdef _OPENMP
+#include <omp.h>
+#else 
+#define omp_get_max_threads() 1
+#define omp_get_thread_num() 0
+#endif
 
 class particles{
 	public:
@@ -25,8 +30,8 @@ int main(int argc, char *argv[])
 	int vphit=1.0;
 	int np; //np ~ number of particles
 	//int niter; //niter ~ number of iterations
-	int nthreads; //nthreads ~ number of threads
-	int rank; //thread identifier
+	int nthreads=1; //nthreads ~ number of threads. 1 by default.
+	int rank=0; //thread identifier. 0 by default.
 
 	particles * particle; 
 	trng::normal_dist<> normal(0.0,1.0);
@@ -47,8 +52,11 @@ int main(int argc, char *argv[])
 
 	//Query maximum threads supported by hardware
 	nthreads=omp_get_max_threads();
+	
 	//Set number of threads to the supported maximum
+#ifdef _OPENMP
 	omp_set_num_threads(nthreads);
+#endif
 	//Create "nthreads" number of independent random number streams 
 	trng::yarn2 * stream;
 	stream=new (nothrow) trng::yarn2[nthreads];
