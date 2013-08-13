@@ -3,7 +3,6 @@
 #include <vector>
 #include <new>
 #include <trng/yarn2.hpp>
-#include <trng/uniform01_dist.hpp>
 #include <trng/normal_dist.hpp>
 #include <trng/lognormal_dist.hpp>
 #ifdef _OPENMP
@@ -15,33 +14,29 @@
 
 class particles{
 	public:
-		std::vector<double> phi,phit,K,Kt,Z;
+		std::vector<double> phi,phit,K,Kt,Z,eps;
 
 };
 
 
 //Constructs Correlation matrix K using the first "n" rows of X i.e. K(X1:n)
-void corr(particles &particle,std::vector<double> &X, int n, int Dim){
-	int i,j,d;
+void corrKt(particles &particle,std::vector<double> &X, int n, int Dim){
 
-	particle.K.resize(n*n,0);
 	particle.Kt.resize(n*n,0);
-	for (i = 0; i < n; ++i)
+	particle.eps.resize(n,0);
+
+
+	for (int r = 0; r < n; ++r)
 	{
-		for (j = 0; j <= i; ++j)
+		for (int c = 0; c <= r; ++c)
 		{
-			for (d = 0; d < Dim; ++d)
+			for (int d = 0; d < Dim; ++d)
 			{
-				particle.K[i*n+j]+=particle.phi[d]*(X[i*n + d] - X[j*n + d])*(X[i*n + d] - X[j*n + d]);
-				particle.Kt[i*n+j]+=particle.phit[d]*(X[i*n + d] - X[j*n + d])*(X[i*n + d] - X[j*n + d]);
+				particle.Kt[r*n+c]+=particle.phit[d]*(X[r*n + d] - X[c*n + d])*(X[r*n + d] - X[c*n + d]);
 			}
-			//particle.K[Dim]+=particle.phi[Dim]*(particle.Z[i]-particle.Z[j])*(particle.Z[i] - particle.Z[j]);
 
-			particle.K[i*n+j]=exp(-particle.K[i*n+j]);
-			particle.K[j*n+i]=particle.K[i*n+j];
-
-			particle.Kt[i*n+j]=exp(-particle.Kt[i*n+j]);
-			particle.Kt[j*n+i]=particle.Kt[i*n+j];
+			particle.Kt[r*n+c]=exp(-particle.Kt[r*n+c]);
+			particle.Kt[c*n+r]=particle.Kt[r*n+c];
 
 		}
 	}
@@ -103,32 +98,49 @@ extern "C" void linsgp(double *XR, int *X_nrow, int *X_ncol, int *np, int *niter
 
 
 
-	//Initialize particles with draws from the posterior
+//*******INITIALIZATION*********//
 	trng::lognormal_dist<> lognormal_phi(*mphi,*vphi);
 	trng::lognormal_dist<> lognormal_phit(*mphit,*vphit);
+	trng::normal_dist<> standard_normal(0,1);
 #pragma omp parallel for private(rank,i,d) 
-	for (i = 0; i < *np; ++i)
+	for (int p = 0; p < *np; ++p)  //p for looping over particles
 	{
 		rank=omp_get_thread_num();
-		particle[i].phi.resize(Dim+1,0);
-		particle[i].phit.resize(Dim,0);
-		particle[i].K.reserve(nobs * nobs);
-		particle[i].Kt.reserve(nobs * nobs);
+		particle[p].phi.resize(Dim+1,0);
+		particle[p].phit.resize(Dim,0);
+		particle[p].K.reserve(nobs * nobs);
+		particle[p].Kt.reserve(nobs * nobs);
+		particle[p].eps.reserve(nobs);
 
-		for (d = 0; d < Dim; ++d)
+
+		for (d = 0; d < Dim; ++d) //d for looping over dimension
 		{
-			particle[i].phi[d] = lognormal_phi(stream[rank]);
-			particle[i].phit[d] = lognormal_phi(stream[rank]);
+			particle[p].phi[d] = lognormal_phi(stream[rank]);
+			particle[p].phit[d] = lognormal_phi(stream[rank]);
 		}
-		particle[i].phi[Dim] = lognormal_phi(stream[rank]);
+		particle[p].phi[Dim] = lognormal_phi(stream[rank]);
 
-		corr(particle[i],X,5,Dim);
+		corrKt(particle[p],X,5,Dim);
+
+		for(unsigned int t=0; t<particle[p].eps.size() ; ++t){
+			particle[p].eps[t]=standard_normal(stream[rank]);
+		}
+
+
+
+
 	}
+//******END INITIALIZATION********//
 
 
-	for (int i = 0; (unsigned int) i < particle[1].K.size(); ++i)
+	for (unsigned int i = 0; i < particle[1].Kt.size(); ++i)
 	{
-		cout << particle[1].K[i] << endl;
+		cout << particle[1].Kt[i] << endl;
+	}
+cout << "hello" << endl;
+	for (unsigned int i = 0; i < particle[1].eps.size(); ++i)
+	{
+		cout << particle[1].eps[i] << endl;
 	}
 
 	delete[] particle; //Free memory
